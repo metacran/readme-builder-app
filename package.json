@@ -1,0 +1,16 @@
+{
+  "name": "readme-builder-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/scheduler"
+  },
+  "dependencies": {
+    "debug": "~2.2.0",
+    "amqplib": "~0.3.2",
+    "marky-markdown": "~5.3.0",
+    "async": "~0.9.0",
+    "request": "~2.55.0",
+    "nano": "~6.1.2"
+  }
+}
