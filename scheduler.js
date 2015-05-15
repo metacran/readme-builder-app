@@ -38,12 +38,19 @@ function store_html(package, html) {
     var couch_url = process.env.DOCSDB_URL || 'http://127.0.0.1:5984';
     var nano = require('nano')(couch_url);
     var db = nano.db.use('readme');
-    var doc = 	{ 'date': new Date().toISOString(),
-		  'html': JSON.stringify(html) };
-    db.insert(doc, package, function(error, response) {
+    var doc = { 'date': new Date().toISOString(),
+		'html': html };
+
+    db.update = function(obj, key, callback) {
+	var db = this;
+	db.get(key, function (error, existing) {
+	    if(!error) obj._rev = existing._rev;
+	    db.insert(obj, key, callback);
+	});
+    }
+
+    db.update(doc, package, function(error, response) {
 	if (error) { return console.log(error); }
-	doc._rev = response.rev;
-	db.insert(doc, package);
     });
 }
 
