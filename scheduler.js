@@ -3,7 +3,7 @@ var build_readme = require('./lib/build_readme');
 
 function run() {
 
-    var broker_url = process.env.BROKER_URL || 'amqp://localhost';
+    var broker_url = process.env.RABBITMQ_URL || 'amqp://localhost';
     var q = 'readme';
     var open = require('amqplib').connect(broker_url);
 
