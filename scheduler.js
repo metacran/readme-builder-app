@@ -11,6 +11,7 @@ function run() {
 	var ok = conn.createChannel();
 	ok = ok.then(function(ch) {
 	    ch.assertQueue(q);
+	    ch.prefetch(1);	// Max 1 job at a time
 	    ch.consume(q, function(msg) {
 		if (msg !== null) {
 		    var msg_obj = JSON.parse(msg.content.toString());
