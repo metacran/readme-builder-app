@@ -1,37 +1,39 @@
 var debug = require('debug');
 var build_readme = require('./lib/build_readme');
+var amqp = require('amqplib');
 
 function run() {
 
     var broker_url = process.env.RABBITMQ_URL || 'amqp://localhost';
     var q = 'readme';
-    var open = require('amqplib').connect(broker_url);
 
-    open.then(function(conn) {
-	var ok = conn.createChannel();
-	ok = ok.then(function(ch) {
-	    ch.assertQueue(q);
-	    ch.prefetch(1);	// Max 1 job at a time
-	    ch.consume(q, function(msg) {
-		if (msg !== null) {
-		    var msg_obj = JSON.parse(msg.content.toString());
-		    console.log(msg_obj.package + " start.");
-
-		    build_readme(msg_obj, function(error, html) {
-			if (!error) {
-			    if (html != "") {
-				store_html(msg_obj.package, html);
-			    }
-			    console.log(msg_obj.package + " done.");
-			} else {
-			    console.log(msg_obj.package + ' error.');
-			}
-			ch.ack(msg);
-		    });
-		}
+    amqp.connect(broker_url).then(function(conn) {
+	process.once('SIGINT', function() { conn.close(); });
+	return conn.createChannel().then(function(ch) {
+	    var ok = ch.assertQueue(q, {durable: true});
+	    ok = ok.then(function() { ch.prefetch(1); });
+	    ok = ok.then(function() {
+		ch.consume(q, doWork, {noAck: false});
 	    });
-	});
-	return ok;
+	    return ok;
+
+	    function doWork(msg) {
+		var msg_obj = JSON.parse(msg.content.toString());
+		console.log(msg_obj.package + " start.");
+
+		build_readme(msg_obj, function(error, html) {
+		    if (!error) {
+			if (html != "") {
+			    store_html(msg_obj.package, html);
+			}
+			console.log(msg_obj.package + " done.");
+		    } else {
+			console.log(msg_obj.package + ' error.');
+		    }
+		    ch.ack(msg);
+		});
+	    }
+	})
     }).then(null, console.warn);
 }
 
